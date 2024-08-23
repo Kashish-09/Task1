@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import Book from '../models/Book';
 import Author from '../models/Author';
+import axiosInstance from '../api/axiosInstance';
 
 
 export const handleFileUpload = <T extends Book | Author>(
@@ -13,7 +14,7 @@ export const handleFileUpload = <T extends Book | Author>(
   
     if (file) {
       reader.readAsBinaryString(file);
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target?.result) {
           const workbook = XLSX.read(event.target.result, { type: 'binary' });
           const sheetName = workbook.SheetNames[0];
@@ -30,18 +31,32 @@ export const handleFileUpload = <T extends Book | Author>(
               ISBN: item['ISBN'] || '',
               AuthorID: item['Author ID'] || '',
             })) as T[];
+
           } else if (type === 'author') {
             mappedData = parsedData.map((item) => ({
+              AuthorID: item['Author ID'] || '',
               Name: item['Name'] || '',
               Email: item['Email'] || '',
               DateOfBirth: item['Date of Birth'] || '',
             })) as T[];
           }
-  
-          console.log('Mapped Data:', mappedData); // Log mapped data for debugging
-  
-          // Directly handle the data without validation
+          
           dataHandler(mappedData);
+
+          if (type === 'book') {
+            try {
+              console.log("Dev");
+              
+              await axiosInstance.post('/hi', mappedData); 
+            }
+            catch (error) {
+              console.log(error);
+            }
+            // await axiosInstance.post('/books/bulk', mappedData);   
+          }
+          else if (type === 'author') {
+            // await axiosInstance.post('/authors/bulk', mappedData);          
+          }
         }
       };
     }
